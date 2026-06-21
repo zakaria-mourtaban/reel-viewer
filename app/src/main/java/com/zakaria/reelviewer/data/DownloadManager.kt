@@ -38,12 +38,11 @@ class DownloadManager(private val context: Context) {
             val dataSpec = DataSpec.Builder()
                 .setUri(Uri.parse(videoUrl))
                 .setPosition(0L)
-                .setLength(C.LENGTH_UNSET)
                 .setKey(videoUrl)
                 .build()
 
             dataSource.open(dataSpec)
-            val totalBytes = if (dataSpec.length != C.LENGTH_UNSET) dataSpec.length else -1L
+            val totalBytes = if (dataSpec.length > 0) dataSpec.length else -1L
             val tempFile = File(context.cacheDir, "download_temp_${System.currentTimeMillis()}.mp4")
             val outputStream = FileOutputStream(tempFile)
             val buffer = ByteArray(64 * 1024)
