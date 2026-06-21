@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.ReelViewer" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+</resources>
