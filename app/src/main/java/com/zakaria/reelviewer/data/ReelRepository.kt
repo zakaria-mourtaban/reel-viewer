@@ -14,6 +14,12 @@ sealed class ReelResult {
     data class Error(val message: String) : ReelResult()
 }
 
+sealed class UpdateResult {
+    data class Updated(val version: String?) : UpdateResult()
+    data object AlreadyUpToDate : UpdateResult()
+    data class Error(val message: String) : UpdateResult()
+}
+
 class ReelRepository(private val context: Context) {
 
     suspend fun getStreamUrl(videoUrl: String): ReelResult = withContext(Dispatchers.IO) {
@@ -58,14 +64,39 @@ class ReelRepository(private val context: Context) {
         }
     }
 
-    suspend fun updateYtDlp(): Boolean = withContext(Dispatchers.IO) {
+    suspend fun updateYtDlp(): UpdateResult = withContext(Dispatchers.IO) {
         try {
-            YoutubeDL.getInstance().updateYoutubeDL(context, UpdateChannel.NIGHTLY)
-            Log.i(TAG, "yt-dlp update completed")
-            true
+            val status = YoutubeDL.getInstance().updateYoutubeDL(context, UpdateChannel.NIGHTLY)
+            when (status) {
+                YoutubeDL.UpdateStatus.DONE -> {
+                    Log.i(TAG, "yt-dlp updated")
+                    UpdateResult.Updated(getVersionName())
+                }
+                YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE -> {
+                    Log.i(TAG, "yt-dlp already up to date")
+                    UpdateResult.AlreadyUpToDate
+                }
+                else -> UpdateResult.AlreadyUpToDate
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update yt-dlp", e)
-            false
+            UpdateResult.Error(e.message ?: "Update failed")
+        }
+    }
+
+    fun getVersion(): String? {
+        return try {
+            YoutubeDL.getInstance().version(context)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getVersionName(): String? {
+        return try {
+            YoutubeDL.getInstance().versionName(context)
+        } catch (e: Exception) {
+            null
         }
     }
 

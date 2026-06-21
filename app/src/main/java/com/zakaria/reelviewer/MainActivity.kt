@@ -3,6 +3,7 @@ package com.zakaria.reelviewer
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.zakaria.reelviewer.player.PlayerViewModel
 import com.zakaria.reelviewer.player.ReelPlayerScreen
 import com.zakaria.reelviewer.player.ScreenMode
+import com.zakaria.reelviewer.player.SettingsScreen
 import com.zakaria.reelviewer.player.SetupScreen
 import com.zakaria.reelviewer.ui.theme.ReelViewerTheme
 
@@ -33,10 +35,17 @@ class MainActivity : ComponentActivity() {
                     when (screenMode) {
                         ScreenMode.PLAYER -> ReelPlayerScreen(viewModel = viewModel)
                         ScreenMode.SETUP -> SetupScreen(viewModel = viewModel)
+                        ScreenMode.SETTINGS -> SettingsScreen(viewModel = viewModel)
                     }
                 }
             }
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                viewModel.navigateBack()
+            }
+        })
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -47,7 +56,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.onSettingsReturned()
+        viewModel.refreshCacheSize()
     }
 
     private fun handleIntent(intent: Intent?) {

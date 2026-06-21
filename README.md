@@ -25,9 +25,12 @@ An Android app that lets you watch short-form videos from any platform without t
 
 ## Features
 
-- **Deep-link routing** — automatically intercepts supported video links from 9 platforms
-- **Native video controls** — seekbar, play/pause, fullscreen, looping, playback speed
-- **Fast streaming** — optimized ExoPlayer buffer starts playback with just 1 second of buffered data
+- **Deep-link routing** — intercepts supported video links from 9 platforms
+- **Native video controls** — seekbar, play/pause, fullscreen, looping, playback speed (0.5x–2x)
+- **Fast streaming** — ExoPlayer streams through a 1 GB disk cache; playback starts with just 1 second of buffered data
+- **Download** — save videos to your Downloads folder; pulls from cache first (near-instant for already-watched videos)
+- **Hold to pause** — hold the screen to pause, release to resume; tap to toggle controls
+- **Settings screen** — platform/domain list, yt-dlp version + manual update, cache management, about
 - **Auto-updating extractor** — if a platform changes their page and extraction breaks, the app automatically updates yt-dlp (NIGHTLY channel) and retries. On successful plays, it silently checks for updates at most once per 24h.
 - **Public videos only** — no login, no credentials, no cookies
 - **Looping playback** — videos loop by default, just like native apps

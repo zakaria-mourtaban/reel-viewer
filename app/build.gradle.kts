@@ -19,8 +19,8 @@ android {
         applicationId = "com.zakaria.reelviewer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.2.1"
+        versionCode = 5
+        versionName = "1.3.0"
 
         vectorDrawables { useSupportLibrary = true }
     }
@@ -104,6 +104,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.datasource)
+    implementation(libs.androidx.media3.database)
     implementation(libs.youtubedl.android.library)
     implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.androidx.ui.tooling)
