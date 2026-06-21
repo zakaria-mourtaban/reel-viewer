@@ -23,7 +23,7 @@ object LinkHandler {
             @Suppress("DEPRECATION")
             pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
         }
-        return resolved?.packageName == context.packageName
+        return resolved?.activityInfo?.packageName == context.packageName
     }
 
     fun openDefaultLinkSettings(activity: Activity) {
