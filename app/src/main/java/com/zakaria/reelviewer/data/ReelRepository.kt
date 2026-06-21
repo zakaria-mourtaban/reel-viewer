@@ -2,8 +2,8 @@ package com.zakaria.reelviewer.data
 
 import android.content.Context
 import android.util.Log
-import com.yausername.youtubedl_android.UpdateChannel
 import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDL.UpdateChannel
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,11 +22,11 @@ class ReelRepository(private val context: Context) {
                 addOption("-f", "best")
             }
             val info = YoutubeDL.getInstance().getInfo(request)
-            val url = info.getUrl()
+            val url = info.url
             if (url.isNullOrBlank()) {
                 ReelResult.Error("Could not extract video URL from this reel")
             } else {
-                ReelResult.Success(url, info.getTitle())
+                ReelResult.Success(url, info.title)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to extract reel", e)

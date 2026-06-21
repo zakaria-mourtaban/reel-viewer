@@ -29,6 +29,7 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+keystore-credentials.txt
 
 .cxx/
 
