@@ -8,9 +8,13 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.zakaria.reelviewer.player.PlayerViewModel
 import com.zakaria.reelviewer.player.ReelPlayerScreen
+import com.zakaria.reelviewer.player.ScreenMode
+import com.zakaria.reelviewer.player.SetupScreen
 import com.zakaria.reelviewer.ui.theme.ReelViewerTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,7 +29,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ReelPlayerScreen(viewModel = viewModel)
+                    val screenMode by viewModel.screenMode.collectAsState()
+                    when (screenMode) {
+                        ScreenMode.PLAYER -> ReelPlayerScreen(viewModel = viewModel)
+                        ScreenMode.SETUP -> SetupScreen(viewModel = viewModel)
+                    }
                 }
             }
         }
@@ -35,6 +43,11 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.onSettingsReturned()
     }
 
     private fun handleIntent(intent: Intent?) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.0
+
+- Added setup/onboarding screen shown on first launch
+- Button to open system "Open by default" settings directly
+- Detects whether the app is set as the default link handler
+- Step-by-step instructions for enabling link handling on Android 12+
+
 ## v1.0.0
 
 - Initial release
