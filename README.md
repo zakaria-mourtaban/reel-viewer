@@ -5,7 +5,7 @@ An Android app that lets you watch short-form videos from any platform without t
 ## How it works
 
 1. You tap a supported video link in any app
-2. Android offers Reel Viewer as the handler (tap "Always" on first use to make it seamless)
+2. Android shows an "Open with" dialog with Reel Viewer as an option (tap "Always" to make it the default for that link type)
 3. The app uses [youtubedl-android](https://github.com/yausername/youtubedl-android) (a yt-dlp wrapper) to extract the direct video URL
 4. The video streams in a native [Media3 ExoPlayer](https://developer.android.com/media/media3/exoplayer) with full player controls — playback starts as soon as the first buffer arrives, no need to download the full video first
 

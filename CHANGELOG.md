@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.1
+
+- Fix: Removed autoVerify from intent-filters so the app appears in Android's "Open with" dialog automatically when a supported link is tapped (no manual setup needed)
+- On Android 12+, autoVerify=true without a hosted assetlinks.json caused the app to be excluded from the disambiguation dialog entirely
+- Now all supported links trigger the standard "Open with" dialog with Reel Viewer as an option
+- Setup screen updated: shows "Ready to go!" with optional settings button for users who want to skip the dialog entirely
+
 ## v1.2.0
 
 - Multi-platform support: TikTok, YouTube Shorts, Facebook Reels, Twitter/X, Snapchat Spotlight, Pinterest, Twitch Clips, Dailymotion (in addition to Instagram Reels)

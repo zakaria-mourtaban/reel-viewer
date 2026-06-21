@@ -14,19 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,11 +35,6 @@ import com.zakaria.reelviewer.util.LinkHandler
 @Composable
 fun SetupScreen(viewModel: PlayerViewModel) {
     val context = LocalContext.current
-    val isDefault by viewModel.isDefaultHandler.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.checkDefaultStatus()
-    }
 
     Box(
         modifier = Modifier
@@ -88,55 +78,49 @@ fun SetupScreen(viewModel: PlayerViewModel) {
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            if (isDefault) {
-                StatusCard(
-                    icon = Icons.Filled.CheckCircle,
-                    iconColor = Color(0xFF4CAF50),
-                    title = "All set!",
-                    message = "Reel Viewer is set as a handler for supported links. " +
-                        "Just tap any supported video link and it will open here."
+            StatusCard(
+                icon = Icons.Filled.CheckCircle,
+                iconColor = Color(0xFF4CAF50),
+                title = "Ready to go!",
+                message = "When you tap a supported video link, Android will show " +
+                    "an \"Open with\" dialog with Reel Viewer as an option. " +
+                    "Tap \"Always\" to make it the default for that link type."
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Want to skip the dialog entirely?",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "You can set Reel Viewer as the default handler for specific " +
+                    "domains in system settings. This makes supported links open " +
+                    "directly with no dialog.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = {
+                    if (context is Activity) {
+                        LinkHandler.openDefaultLinkSettings(context)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
-            } else {
-                StatusCard(
-                    icon = Icons.Filled.AppShortcut,
-                    iconColor = MaterialTheme.colorScheme.primary,
-                    title = "Set as default link handler",
-                    message = "To make supported video links open directly in Reel Viewer, " +
-                        "enable \"Open supported links\" in the next screen."
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = {
-                        if (context is Activity) {
-                            LinkHandler.openDefaultLinkSettings(context)
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.height(0.dp))
-                    Text(
-                        text = "  Open Link Settings",
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "In the settings page:\n" +
-                        "1. Toggle \"Open supported links\" ON\n" +
-                        "2. Tap \"Add link\" if no links are listed\n" +
-                        "3. Press back to return here",
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Start,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                    modifier = Modifier.fillMaxWidth()
+                    text = "  Open Link Settings",
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
         }
