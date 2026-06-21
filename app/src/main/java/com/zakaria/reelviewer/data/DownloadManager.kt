@@ -37,7 +37,7 @@ class DownloadManager(private val context: Context) {
             val dataSource = cacheDataSourceFactory.createDataSourceForDownloading()
             val dataSpec = DataSpec.Builder()
                 .setUri(Uri.parse(videoUrl))
-                .setPosition(0)
+                .setPosition(0L)
                 .setLength(C.LENGTH_UNSET)
                 .setKey(videoUrl)
                 .build()

@@ -23,7 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Cache
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
@@ -292,7 +292,7 @@ private fun SectionCache(
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = Icons.Filled.Cache,
+                imageVector = Icons.Filled.Storage,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 modifier = Modifier.size(20.dp)

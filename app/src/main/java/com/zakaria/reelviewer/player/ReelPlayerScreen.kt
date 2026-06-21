@@ -251,7 +251,7 @@ private fun PlayerOverlay(
             .fillMaxSize()
             .padding(8.dp),
         horizontalArrangement = Arrangement.End,
-        verticalArrangement = Arrangement.Top,
+        verticalAlignment = Alignment.Top,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
