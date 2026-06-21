@@ -74,10 +74,17 @@ fun SetupScreen(viewModel: PlayerViewModel) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Watch Instagram reels without the Instagram app",
+                text = "Watch short-form videos from any platform without their apps",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Instagram • TikTok • YouTube Shorts • Facebook\nTwitter/X • Snapchat • Pinterest • Twitch • Dailymotion",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -86,15 +93,15 @@ fun SetupScreen(viewModel: PlayerViewModel) {
                     icon = Icons.Filled.CheckCircle,
                     iconColor = Color(0xFF4CAF50),
                     title = "All set!",
-                    message = "Reel Viewer is your default handler for Instagram reel links. " +
-                        "Just tap any instagram.com/reel/ link and it will open here automatically."
+                    message = "Reel Viewer is set as a handler for supported links. " +
+                        "Just tap any supported video link and it will open here."
                 )
             } else {
                 StatusCard(
                     icon = Icons.Filled.AppShortcut,
                     iconColor = MaterialTheme.colorScheme.primary,
                     title = "Set as default link handler",
-                    message = "To make Instagram reel links open directly in Reel Viewer, " +
+                    message = "To make supported video links open directly in Reel Viewer, " +
                         "enable \"Open supported links\" in the next screen."
                 )
                 Spacer(modifier = Modifier.height(24.dp))

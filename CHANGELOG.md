@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.0
+
+- Multi-platform support: TikTok, YouTube Shorts, Facebook Reels, Twitter/X, Snapchat Spotlight, Pinterest, Twitch Clips, Dailymotion (in addition to Instagram Reels)
+- Faster video extraction using --print instead of --dump-json (skips full JSON parsing)
+- Faster streaming start: ExoPlayer buffer optimized for minimal initial buffer (1s) before playback
+- Platform name shown during loading ("Loading from TikTok…")
+- Setup screen updated to show all supported platforms
+- Idle screen shows all supported platforms
+
 ## v1.1.0
 
 - Added setup/onboarding screen shown on first launch

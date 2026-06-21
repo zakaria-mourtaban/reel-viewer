@@ -10,27 +10,51 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 sealed class ReelResult {
-    data class Success(val url: String, val title: String?) : ReelResult()
+    data class Success(val url: String, val title: String?, val platform: String) : ReelResult()
     data class Error(val message: String) : ReelResult()
 }
 
 class ReelRepository(private val context: Context) {
 
-    suspend fun getReelStreamUrl(reelUrl: String): ReelResult = withContext(Dispatchers.IO) {
+    suspend fun getStreamUrl(videoUrl: String): ReelResult = withContext(Dispatchers.IO) {
         try {
-            val request = YoutubeDLRequest(reelUrl).apply {
+            val request = YoutubeDLRequest(videoUrl).apply {
                 addOption("-f", "best")
+                addOption("--print", "%(url)s")
+                addOption("--print", "%(title)s")
+                addOption("--no-warnings")
+                addOption("--no-progress")
             }
-            val info = YoutubeDL.getInstance().getInfo(request)
-            val url = info.url
-            if (url.isNullOrBlank()) {
-                ReelResult.Error("Could not extract video URL from this reel")
+            val response = YoutubeDL.getInstance().execute(request)
+            val lines = response.out.trim().lines().filter { it.isNotBlank() }
+            val streamUrl = lines.firstOrNull { it.startsWith("http") }
+            val title = lines.getOrNull(1)
+
+            if (streamUrl.isNullOrBlank()) {
+                ReelResult.Error("Could not extract video URL from this link")
             } else {
-                ReelResult.Success(url, info.title)
+                val platform = detectPlatform(videoUrl)
+                ReelResult.Success(streamUrl, title, platform)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to extract reel", e)
-            ReelResult.Error(e.message ?: "Failed to load reel")
+            Log.e(TAG, "Failed to extract video", e)
+            ReelResult.Error(e.message ?: "Failed to load video")
+        }
+    }
+
+    private fun detectPlatform(url: String): String {
+        val lower = url.lowercase()
+        return when {
+            "instagram.com" in lower -> "Instagram"
+            "tiktok.com" in lower -> "TikTok"
+            "youtube.com" in lower || "youtu.be" in lower -> "YouTube"
+            "facebook.com" in lower || "fb.watch" in lower -> "Facebook"
+            "twitter.com" in lower || "x.com" in lower -> "X"
+            "snapchat.com" in lower -> "Snapchat"
+            "pinterest.com" in lower || "pin.it" in lower -> "Pinterest"
+            "twitch.tv" in lower -> "Twitch"
+            "dailymotion.com" in lower || "dai.ly" in lower -> "Dailymotion"
+            else -> "Video"
         }
     }
 

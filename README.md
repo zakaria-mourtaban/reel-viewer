@@ -1,21 +1,36 @@
 # Reel Viewer
 
-An Android app that lets you watch Instagram reels without having the Instagram app installed. When you tap an `instagram.com/reel/...` link from any app (WhatsApp, Discord, browser, etc.), Reel Viewer opens it directly — no share menu, no copy-paste. It plays the reel in a native video player with standard controls (seekbar, play/pause, fullscreen, looping, speed).
+An Android app that lets you watch short-form videos from any platform without their apps installed. When you tap a video link from Instagram, TikTok, YouTube Shorts, Facebook, Twitter/X, Snapchat, Pinterest, Twitch, or Dailymotion, Reel Viewer opens it directly — no share menu, no copy-paste. It plays the video in a native player with standard controls (seekbar, play/pause, fullscreen, looping, speed).
 
 ## How it works
 
-1. You tap an Instagram reel link in any app
+1. You tap a supported video link in any app
 2. Android offers Reel Viewer as the handler (tap "Always" on first use to make it seamless)
 3. The app uses [youtubedl-android](https://github.com/yausername/youtubedl-android) (a yt-dlp wrapper) to extract the direct video URL
-4. The video plays in a native [Media3 ExoPlayer](https://developer.android.com/media/media3/exoplayer) with full player controls
+4. The video streams in a native [Media3 ExoPlayer](https://developer.android.com/media/media3/exoplayer) with full player controls — playback starts as soon as the first buffer arrives, no need to download the full video first
+
+## Supported platforms
+
+| Platform | URL patterns |
+|----------|-------------|
+| Instagram Reels | `instagram.com/reel/*`, `/reels/*`, `/tv/*`, `instagr.am/reel/*` |
+| TikTok | `tiktok.com/@*/video/*`, `tiktok.com/t/*`, `vm.tiktok.com/*`, `vt.tiktok.com/*` |
+| YouTube Shorts | `youtube.com/shorts/*`, `m.youtube.com/shorts/*` |
+| Facebook Reels | `facebook.com/reel/*`, `facebook.com/share/v/*`, `facebook.com/share/r/*`, `fb.watch/*` |
+| Twitter/X | `twitter.com/*/status/*`, `x.com/*/status/*` |
+| Snapchat Spotlight | `snapchat.com/spotlight/*` |
+| Pinterest | `pinterest.com/pin/*`, `pin.it/*` |
+| Twitch Clips | `twitch.tv/*/clip/*`, `clips.twitch.tv/*` |
+| Dailymotion | `dailymotion.com/video/*`, `dai.ly/*` |
 
 ## Features
 
-- **Deep-link routing** — automatically intercepts `instagram.com/reel/*` and `/reels/*` links
+- **Deep-link routing** — automatically intercepts supported video links from 9 platforms
 - **Native video controls** — seekbar, play/pause, fullscreen, looping, playback speed
-- **Auto-updating extractor** — if Instagram changes their page and extraction breaks, the app automatically updates yt-dlp (NIGHTLY channel) and retries. On successful plays, it silently checks for updates at most once per 24h.
-- **Public reels only** — no login, no credentials, no cookies
-- **Looping playback** — reels loop by default, just like the Instagram app
+- **Fast streaming** — optimized ExoPlayer buffer starts playback with just 1 second of buffered data
+- **Auto-updating extractor** — if a platform changes their page and extraction breaks, the app automatically updates yt-dlp (NIGHTLY channel) and retries. On successful plays, it silently checks for updates at most once per 24h.
+- **Public videos only** — no login, no credentials, no cookies
+- **Looping playback** — videos loop by default, just like native apps
 
 ## Requirements
 

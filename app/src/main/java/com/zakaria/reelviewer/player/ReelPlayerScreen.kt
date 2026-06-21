@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +36,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
@@ -49,9 +49,22 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-        }
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                1000,
+                5000,
+                1000,
+                1000,
+            )
+            .setTargetBufferBytes(DefaultLoadControl.DEFAULT_TARGET_BUFFER_BYTES)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
+        ExoPlayer.Builder(context)
+            .setLoadControl(loadControl)
+            .build().apply {
+                repeatMode = Player.REPEAT_MODE_ONE
+            }
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -84,7 +97,7 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
     ) {
         when {
             state.isLoading -> {
-                LoadingContent(statusMessage = state.statusMessage)
+                LoadingContent(statusMessage = state.statusMessage, platform = state.platform)
             }
             state.error != null -> {
                 ErrorContent(
@@ -114,19 +127,30 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
 }
 
 @Composable
-private fun LoadingContent(statusMessage: String?) {
+private fun LoadingContent(statusMessage: String?, platform: String?) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator(color = Color.White)
-        if (statusMessage != null) {
+        if (platform != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = statusMessage,
+                text = "Loading from $platform…",
                 color = Color.White,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+        }
+        if (statusMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = statusMessage,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 32.dp)
             )
         }
@@ -177,10 +201,18 @@ private fun IdleContent() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Tap an Instagram reel link to play it",
+            text = "Tap a short-form video link to play it",
             color = Color.White,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Instagram • TikTok • YouTube Shorts • Facebook\nTwitter/X • Snapchat • Pinterest • Twitch • Dailymotion",
+            color = Color.White.copy(alpha = 0.5f),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 32.dp)
         )
     }

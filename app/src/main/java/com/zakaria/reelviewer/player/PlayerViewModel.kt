@@ -18,6 +18,7 @@ data class PlayerState(
     val statusMessage: String? = null,
     val videoUrl: String? = null,
     val title: String? = null,
+    val platform: String? = null,
     val error: String? = null,
 )
 
@@ -48,7 +49,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _state.value = PlayerState(isLoading = true)
 
-            var result = repository.getReelStreamUrl(url)
+            var result = repository.getStreamUrl(url)
 
             if (result is ReelResult.Error) {
                 _state.value = PlayerState(
@@ -56,7 +57,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     statusMessage = "Extractor may be outdated — updating yt-dlp…",
                 )
                 repository.updateYtDlp()
-                result = repository.getReelStreamUrl(url)
+                result = repository.getStreamUrl(url)
             }
 
             when (result) {
@@ -65,6 +66,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                         isLoading = false,
                         videoUrl = result.url,
                         title = result.title,
+                        platform = result.platform,
                     )
                     repository.maybeBackgroundUpdate()
                 }
