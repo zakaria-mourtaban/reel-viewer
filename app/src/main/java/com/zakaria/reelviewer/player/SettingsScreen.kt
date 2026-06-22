@@ -239,20 +239,12 @@ private fun PlatformDropdown(
         ) {
             Column(modifier = Modifier.padding(start = 32.dp, bottom = 8.dp)) {
                 platform.domains.forEach { domain ->
-                    val domainColor = statusColor
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(domainColor, CircleShape)
-                        )
-                        Text(
-                            text = "  $domain",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (status == LinkStatus.ENABLED) Color(0xFF4CAF50).copy(alpha = 0.7f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
-                    }
+                    Text(
+                        text = "  $domain",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
                 }
             }
         }
