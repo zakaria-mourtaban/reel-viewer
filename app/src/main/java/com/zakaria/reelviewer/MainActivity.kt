@@ -43,7 +43,11 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                viewModel.navigateBack()
+                when (viewModel.screenMode.value) {
+                    ScreenMode.SETTINGS -> viewModel.navigateBack()
+                    ScreenMode.PLAYER -> finish()
+                    ScreenMode.SETUP -> finish()
+                }
             }
         })
     }
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshCacheSize()
+        viewModel.checkLinkStatuses()
     }
 
     private fun handleIntent(intent: Intent?) {

@@ -1,23 +1,32 @@
 package com.zakaria.reelviewer.player
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -45,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -68,11 +78,12 @@ import com.zakaria.reelviewer.data.VideoCache
 fun ReelPlayerScreen(viewModel: PlayerViewModel) {
     val state by viewModel.state.collectAsState()
     val downloadState by viewModel.downloadState.collectAsState()
+    val debugOutput by viewModel.debugOutput.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
-    var playerViewRef = remember { mutableStateOf<PlayerView?>(null) }
+    var showDebugDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val exoPlayer = remember {
@@ -140,6 +151,25 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
         }
     }
 
+    LaunchedEffect(state.error) {
+        if (state.error != null && debugOutput == null) {
+            viewModel.loadVerboseOutput()
+        }
+    }
+
+    if (showDebugDialog || (state.error != null && debugOutput != null && showDebugDialog)) {
+        DebugDialog(
+            output = debugOutput ?: "No debug output available. Tap 'Load verbose output' to fetch.",
+            onDismiss = { showDebugDialog = false },
+            onCopy = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("yt-dlp debug", debugOutput ?: ""))
+                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+            },
+            onLoadVerbose = { viewModel.loadVerboseOutput() },
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -152,7 +182,8 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
             state.error != null -> {
                 ErrorContent(
                     message = state.error!!,
-                    onRetry = { viewModel.retry() }
+                    onRetry = { viewModel.retry() },
+                    onShowDebug = { showDebugDialog = true },
                 )
             }
             state.videoUrl != null -> {
@@ -168,7 +199,6 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
                                 controllerHideOnTouch = true
                                 setControllerShowTimeoutMs(4000)
                                 hideController()
-                                playerViewRef.value = this
 
                                 setOnTouchListener { _, event ->
                                     handleHoldToPause(event, exoPlayer)
@@ -182,9 +212,7 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
                     PlayerOverlay(
                         viewModel = viewModel,
                         playbackSpeed = playbackSpeed,
-                        onSpeedChange = { speed ->
-                            playbackSpeed = speed
-                        },
+                        onSpeedChange = { speed -> playbackSpeed = speed },
                         onShare = {
                             state.originalUrl?.let { url ->
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -194,6 +222,7 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
                                 context.startActivity(Intent.createChooser(shareIntent, "Share link"))
                             }
                         },
+                        onShowDebug = { showDebugDialog = true },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -244,6 +273,7 @@ private fun PlayerOverlay(
     playbackSpeed: Float,
     onSpeedChange: (Float) -> Unit,
     onShare: () -> Unit,
+    onShowDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -253,9 +283,7 @@ private fun PlayerOverlay(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.Top,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             val speedLabel = when (playbackSpeed) {
                 0.5f -> "0.5x"
                 1.5f -> "1.5x"
@@ -282,8 +310,66 @@ private fun PlayerOverlay(
             IconButton(onClick = { viewModel.downloadCurrentVideo() }) {
                 Icon(Icons.Filled.Download, contentDescription = "Download", tint = Color.White)
             }
+            IconButton(onClick = onShowDebug) {
+                Icon(Icons.Filled.Info, contentDescription = "Debug info", tint = Color.White)
+            }
             IconButton(onClick = { viewModel.navigateToSettings() }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DebugDialog(
+    output: String,
+    onDismiss: () -> Unit,
+    onCopy: () -> Unit,
+    onLoadVerbose: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.9f))
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Debug Output",
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Row {
+                    IconButton(onClick = onLoadVerbose) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Load verbose", tint = Color.White)
+                    }
+                    IconButton(onClick = onCopy) {
+                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copy", tint = Color.White)
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = output,
+                    color = Color(0xFF00FF00),
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }
@@ -351,7 +437,7 @@ private fun LoadingContent(statusMessage: String?, platform: String?) {
 }
 
 @Composable
-private fun ErrorContent(message: String, onRetry: () -> Unit) {
+private fun ErrorContent(message: String, onRetry: () -> Unit, onShowDebug: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -373,8 +459,10 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(24.dp))
-        OutlinedButton(onClick = onRetry) {
-            Text("Retry")
+        Row {
+            OutlinedButton(onClick = onRetry) { Text("Retry") }
+            Spacer(modifier = Modifier.height(0.dp))
+            OutlinedButton(onClick = onShowDebug) { Text("Debug Info") }
         }
     }
 }

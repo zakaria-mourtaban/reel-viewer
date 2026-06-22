@@ -19,14 +19,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,16 +40,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.zakaria.reelviewer.util.LinkHandler
+import com.zakaria.reelviewer.util.LinkStatus
+import com.zakaria.reelviewer.util.PlatformInfo
 import com.zakaria.reelviewer.util.PlatformRegistry
 
 @Composable
@@ -57,6 +62,7 @@ fun SettingsScreen(viewModel: PlayerViewModel) {
     val cacheSizeBytes by viewModel.cacheSizeBytes.collectAsState()
     val ytDlpVersion by viewModel.ytDlpVersion.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
+    val linkStatuses by viewModel.platformLinkStatuses.collectAsState()
 
     Box(
         modifier = Modifier
@@ -68,12 +74,10 @@ fun SettingsScreen(viewModel: PlayerViewModel) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingsHeader(
-                title = "Settings",
-                onBack = { viewModel.navigateBack() }
-            )
+            SettingsHeader(title = "Settings", onBack = { viewModel.navigateBack() })
 
             SectionLinkHandling(
+                linkStatuses = linkStatuses,
                 onOpenLinkSettings = {
                     if (context is Activity) {
                         LinkHandler.openDefaultLinkSettings(context)
@@ -100,6 +104,8 @@ fun SettingsScreen(viewModel: PlayerViewModel) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             SectionAbout()
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -129,7 +135,10 @@ private fun SettingsHeader(title: String, onBack: () -> Unit) {
 }
 
 @Composable
-private fun SectionLinkHandling(onOpenLinkSettings: () -> Unit) {
+private fun SectionLinkHandling(
+    linkStatuses: Map<String, LinkStatus>,
+    onOpenLinkSettings: () -> Unit,
+) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
             text = "Link Handling",
@@ -147,8 +156,20 @@ private fun SectionLinkHandling(onOpenLinkSettings: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        PlatformRegistry.platforms.forEach { platform ->
-            PlatformDropdown(platform.name, platform.domains)
+        val sortedPlatforms = PlatformRegistry.platforms.sortedWith(
+            compareBy<PlatformInfo> {
+                when (linkStatuses[it.name]) {
+                    LinkStatus.NONE -> 2
+                    LinkStatus.DISABLED -> 1
+                    LinkStatus.ENABLED -> 0
+                    else -> 3
+                }
+            }.thenBy { it.name }
+        )
+
+        sortedPlatforms.forEach { platform ->
+            val status = linkStatuses[platform.name]
+            PlatformDropdown(platform, status)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -170,42 +191,68 @@ private fun SectionLinkHandling(onOpenLinkSettings: () -> Unit) {
 }
 
 @Composable
-private fun PlatformDropdown(name: String, domains: List<String>) {
+private fun PlatformDropdown(
+    platform: PlatformInfo,
+    status: LinkStatus?,
+) {
     var expanded by remember { mutableStateOf(false) }
-    Column {
+    val isGreyed = status == LinkStatus.NONE
+    val alpha = if (isGreyed) 0.4f else 1.0f
+
+    val statusColor = when (status) {
+        LinkStatus.ENABLED -> Color(0xFF4CAF50)
+        LinkStatus.DISABLED -> Color(0xFFE53935)
+        LinkStatus.NONE -> Color.Gray
+        else -> Color.Gray
+    }
+
+    Column(modifier = Modifier.alpha(alpha)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable { if (!isGreyed) expanded = !expanded }
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (expanded) Icons.Filled.ArrowDropDown else Icons.Filled.ArrowDropDown,
+                imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                tint = if (isGreyed) Color.Gray else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                text = name,
+                text = platform.name,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(start = 8.dp)
+                color = if (isGreyed) Color.Gray else MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(start = 8.dp).weight(1f)
+            )
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(statusColor, CircleShape)
             )
         }
         AnimatedVisibility(
-            visible = expanded,
+            visible = expanded && !isGreyed,
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
             Column(modifier = Modifier.padding(start = 32.dp, bottom = 8.dp)) {
-                domains.forEach { domain ->
-                    Text(
-                        text = domain,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
+                platform.domains.forEach { domain ->
+                    val domainColor = statusColor
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(domainColor, CircleShape)
+                        )
+                        Text(
+                            text = "  $domain",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (status == LinkStatus.ENABLED) Color(0xFF4CAF50).copy(alpha = 0.7f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
                 }
             }
         }
@@ -249,20 +296,14 @@ private fun SectionYtDlp(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
                 )
-                Text(
-                    text = "  Checking…",
-                    modifier = Modifier.padding(start = 4.dp)
-                )
+                Text(text = "  Checking…", modifier = Modifier.padding(start = 4.dp))
             } else {
                 Icon(
                     imageVector = Icons.Filled.Update,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )
-                Text(
-                    text = "  Check for Updates",
-                    modifier = Modifier.padding(start = 4.dp)
-                )
+                Text(text = "  Check for Updates", modifier = Modifier.padding(start = 4.dp))
             }
         }
         if (message != null) {
@@ -320,10 +361,7 @@ private fun SectionCache(
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
-            Text(
-                text = "  Clear Cache",
-                modifier = Modifier.padding(start = 4.dp)
-            )
+            Text(text = "  Clear Cache", modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
@@ -346,7 +384,7 @@ private fun SectionAbout() {
                 modifier = Modifier.size(20.dp)
             )
             Text(
-                text = "  Reel Viewer v1.3.0",
+                text = "  Reel Viewer v1.3.1",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
@@ -357,7 +395,6 @@ private fun SectionAbout() {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

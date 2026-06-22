@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.1
+
+- Fix TikTok: prefer H264 codec (-S vcodec:h264,res) to avoid HEVC formats that download without audio
+- Debug info button (ℹ) on player overlay: shows verbose yt-dlp output in a scrollable monospace dialog
+- Copy button in debug dialog: copies full verbose output to clipboard
+- Debug info auto-opens on extraction errors with verbose output pre-loaded
+- Back navigation: pressing back from player finishes activity and returns to calling app
+- Comprehensive intent-filters: added Instagram /p/ (posts), Instagram cdninstagram.com (CDN direct video),
+  YouTube youtu.be, Facebook /watch and /*/videos/, Snapchat /p/ (share links)
+- Direct video URL bypass: CDN links (cdninstagram.com, scontent) and direct video files skip yt-dlp extraction
+- Platform dropdown: green dot = enabled, red dot = disabled, grey = no links selected
+- Greyed platforms sorted to bottom; enabled platforms sorted to top
+- Platform domains colored to match platform status
+
 ## v1.3.0
 
 - Settings screen with 4 sections: Link Handling, yt-dlp Extractor, Cache, About

@@ -10,8 +10,8 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 sealed class ReelResult {
-    data class Success(val url: String, val title: String?, val platform: String) : ReelResult()
-    data class Error(val message: String) : ReelResult()
+    data class Success(val url: String, val title: String?, val platform: String, val isDirect: Boolean = false) : ReelResult()
+    data class Error(val message: String, val verboseOutput: String? = null) : ReelResult()
 }
 
 sealed class UpdateResult {
@@ -22,10 +22,17 @@ sealed class UpdateResult {
 
 class ReelRepository(private val context: Context) {
 
+    private val directHosts = listOf("cdninstagram.com", "cdninstagram", "scontent")
+    private val videoExtensions = listOf(".mp4", ".webm", ".m3u8", ".ts")
+
     suspend fun getStreamUrl(videoUrl: String): ReelResult = withContext(Dispatchers.IO) {
+        if (isDirectVideoUrl(videoUrl)) {
+            return@withContext ReelResult.Success(videoUrl, null, detectPlatform(videoUrl), isDirect = true)
+        }
         try {
             val request = YoutubeDLRequest(videoUrl).apply {
                 addOption("-f", "best")
+                addOption("-S", "vcodec:h264,res")
                 addOption("--print", "%(url)s")
                 addOption("--print", "%(title)s")
                 addOption("--no-warnings")
@@ -37,21 +44,59 @@ class ReelRepository(private val context: Context) {
             val title = lines.getOrNull(1)
 
             if (streamUrl.isNullOrBlank()) {
-                ReelResult.Error("Could not extract video URL from this link")
+                val verbose = getVerbose(videoUrl)
+                ReelResult.Error("Could not extract video URL from this link", verbose)
             } else {
                 val platform = detectPlatform(videoUrl)
                 ReelResult.Success(streamUrl, title, platform)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to extract video", e)
-            ReelResult.Error(e.message ?: "Failed to load video")
+            ReelResult.Error(e.message ?: "Failed to load video", getVerbose(videoUrl))
+        }
+    }
+
+    private fun isDirectVideoUrl(url: String): Boolean {
+        val lower = url.lowercase()
+        if (videoExtensions.any { lower.contains(it) }) return true
+        if (directHosts.any { lower.contains(it) }) return true
+        return false
+    }
+
+    suspend fun getVerboseOutput(videoUrl: String): String = withContext(Dispatchers.IO) {
+        getVerbose(videoUrl)
+    }
+
+    private fun getVerbose(videoUrl: String): String {
+        return try {
+            val request = YoutubeDLRequest(videoUrl).apply {
+                addOption("--verbose")
+                addOption("--no-warnings")
+                addOption("--print", "%(url)s")
+                addOption("--print", "%(title)s")
+            }
+            val response = YoutubeDL.getInstance().execute(request)
+            buildString {
+                appendLine("=== STDOUT ===")
+                appendLine(response.out)
+                appendLine()
+                appendLine("=== STDERR ===")
+                appendLine(response.err)
+            }
+        } catch (e: Exception) {
+            buildString {
+                appendLine("Exception: ${e.message}")
+                appendLine()
+                appendLine("Stack trace:")
+                appendLine(e.stackTraceToString())
+            }
         }
     }
 
     private fun detectPlatform(url: String): String {
         val lower = url.lowercase()
         return when {
-            "instagram.com" in lower -> "Instagram"
+            "instagram.com" in lower || "cdninstagram.com" in lower -> "Instagram"
             "tiktok.com" in lower -> "TikTok"
             "youtube.com" in lower || "youtu.be" in lower -> "YouTube"
             "facebook.com" in lower || "fb.watch" in lower -> "Facebook"
@@ -85,28 +130,18 @@ class ReelRepository(private val context: Context) {
     }
 
     fun getVersion(): String? {
-        return try {
-            YoutubeDL.getInstance().version(context)
-        } catch (e: Exception) {
-            null
-        }
+        return try { YoutubeDL.getInstance().version(context) } catch (e: Exception) { null }
     }
 
     fun getVersionName(): String? {
-        return try {
-            YoutubeDL.getInstance().versionName(context)
-        } catch (e: Exception) {
-            null
-        }
+        return try { YoutubeDL.getInstance().versionName(context) } catch (e: Exception) { null }
     }
 
     suspend fun maybeBackgroundUpdate() = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastCheck = prefs.getLong(KEY_LAST_UPDATE_CHECK, 0)
         val now = System.currentTimeMillis()
-        if (now - lastCheck < UPDATE_CHECK_INTERVAL_MS) {
-            return@withContext
-        }
+        if (now - lastCheck < UPDATE_CHECK_INTERVAL_MS) return@withContext
         prefs.edit().putLong(KEY_LAST_UPDATE_CHECK, now).apply()
         try {
             YoutubeDL.getInstance().updateYoutubeDL(context, UpdateChannel.NIGHTLY)

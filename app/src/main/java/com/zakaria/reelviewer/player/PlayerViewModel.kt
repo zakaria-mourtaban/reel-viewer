@@ -1,6 +1,11 @@
 package com.zakaria.reelviewer.player
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.zakaria.reelviewer.data.DownloadManager
@@ -9,6 +14,8 @@ import com.zakaria.reelviewer.data.ReelRepository
 import com.zakaria.reelviewer.data.ReelResult
 import com.zakaria.reelviewer.data.UpdateResult
 import com.zakaria.reelviewer.data.VideoCache
+import com.zakaria.reelviewer.util.LinkStatus
+import com.zakaria.reelviewer.util.PlatformRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +49,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val repository = ReelRepository(application)
     private val downloadManager = DownloadManager(application)
     private var lastUrl: String? = null
+    private var openedFromLink = false
 
     private val _screenMode = MutableStateFlow(ScreenMode.SETUP)
     val screenMode: StateFlow<ScreenMode> = _screenMode.asStateFlow()
@@ -61,13 +69,50 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val _ytDlpVersion = MutableStateFlow<String?>(null)
     val ytDlpVersion: StateFlow<String?> = _ytDlpVersion.asStateFlow()
 
+    private val _debugOutput = MutableStateFlow<String?>(null)
+    val debugOutput: StateFlow<String?> = _debugOutput.asStateFlow()
+
+    private val _platformLinkStatuses = MutableStateFlow<Map<String, LinkStatus>>(emptyMap())
+    val platformLinkStatuses: StateFlow<Map<String, LinkStatus>> = _platformLinkStatuses.asStateFlow()
+
     init {
         refreshCacheSize()
         refreshYtDlpVersion()
     }
 
+    fun checkLinkStatuses() {
+        val context = getApplication<Application>()
+        val statuses = mutableMapOf<String, LinkStatus>()
+        for (platform in PlatformRegistry.platforms) {
+            statuses[platform.name] = checkPlatformLinkStatus(context, platform.testUrl)
+        }
+        _platformLinkStatuses.value = statuses
+    }
+
+    private fun checkPlatformLinkStatus(context: Context, testUrl: String): LinkStatus {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(testUrl))
+        val pm = context.packageManager
+        val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.resolveActivity(
+                intent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong())
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
+        return if (resolved?.activityInfo?.packageName == context.packageName) {
+            LinkStatus.ENABLED
+        } else if (resolved != null) {
+            LinkStatus.DISABLED
+        } else {
+            LinkStatus.NONE
+        }
+    }
+
     fun navigateToSettings() {
         _screenMode.value = ScreenMode.SETTINGS
+        checkLinkStatuses()
     }
 
     fun navigateBack() {
@@ -112,12 +157,18 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun loadReel(url: String) {
+        openedFromLink = true
         _screenMode.value = ScreenMode.PLAYER
         lastUrl = url
         viewModelScope.launch {
             _state.value = PlayerState(isLoading = true)
+            _debugOutput.value = null
 
             var result = repository.getStreamUrl(url)
+
+            if (result is ReelResult.Error && result.verboseOutput != null) {
+                _debugOutput.value = result.verboseOutput
+            }
 
             if (result is ReelResult.Error) {
                 _state.value = PlayerState(
@@ -126,6 +177,9 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 )
                 repository.updateYtDlp()
                 result = repository.getStreamUrl(url)
+                if (result is ReelResult.Error && result.verboseOutput != null) {
+                    _debugOutput.value = result.verboseOutput
+                }
             }
 
             when (result) {
@@ -147,6 +201,19 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
         }
+    }
+
+    fun loadVerboseOutput() {
+        val url = lastUrl ?: return
+        viewModelScope.launch {
+            _debugOutput.value = "Loading verbose output…"
+            val output = repository.getVerboseOutput(url)
+            _debugOutput.value = output
+        }
+    }
+
+    fun clearDebugOutput() {
+        _debugOutput.value = null
     }
 
     fun downloadCurrentVideo() {
@@ -177,4 +244,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun retry() {
         lastUrl?.let { loadReel(it) }
     }
+
+    fun wasOpenedFromLink(): Boolean = openedFromLink
 }

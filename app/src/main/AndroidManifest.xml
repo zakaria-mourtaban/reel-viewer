@@ -28,7 +28,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Instagram Reels -->
+            <!-- Instagram: reel, reels, tv, p (posts), cdn -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -36,26 +36,31 @@
                 <data android:scheme="https" android:host="instagram.com" android:pathPrefix="/reel/" />
                 <data android:scheme="https" android:host="instagram.com" android:pathPrefix="/reels/" />
                 <data android:scheme="https" android:host="instagram.com" android:pathPrefix="/tv/" />
+                <data android:scheme="https" android:host="instagram.com" android:pathPrefix="/p/" />
                 <data android:scheme="https" android:host="www.instagram.com" android:pathPrefix="/reel/" />
                 <data android:scheme="https" android:host="www.instagram.com" android:pathPrefix="/reels/" />
                 <data android:scheme="https" android:host="www.instagram.com" android:pathPrefix="/tv/" />
+                <data android:scheme="https" android:host="www.instagram.com" android:pathPrefix="/p/" />
                 <data android:scheme="https" android:host="m.instagram.com" android:pathPrefix="/reel/" />
                 <data android:scheme="https" android:host="m.instagram.com" android:pathPrefix="/reels/" />
+                <data android:scheme="https" android:host="m.instagram.com" android:pathPrefix="/p/" />
                 <data android:scheme="https" android:host="instagr.am" android:pathPrefix="/reel/" />
+                <data android:scheme="https" android:host="cdninstagram.com" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- TikTok -->
+            <!-- TikTok: video, short links -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.tiktok.com" android:pathPattern="/@.*/video/.*" />
                 <data android:scheme="https" android:host="www.tiktok.com" android:pathPrefix="/t/" />
+                <data android:scheme="https" android:host="tiktok.com" android:pathPattern="/@.*/video/.*" />
                 <data android:scheme="https" android:host="vm.tiktok.com" android:pathPrefix="/" />
                 <data android:scheme="https" android:host="vt.tiktok.com" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- YouTube Shorts -->
+            <!-- YouTube Shorts + youtu.be -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -63,9 +68,10 @@
                 <data android:scheme="https" android:host="www.youtube.com" android:pathPrefix="/shorts/" />
                 <data android:scheme="https" android:host="m.youtube.com" android:pathPrefix="/shorts/" />
                 <data android:scheme="https" android:host="youtube.com" android:pathPrefix="/shorts/" />
+                <data android:scheme="https" android:host="youtu.be" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- Facebook Reels -->
+            <!-- Facebook: reel, share, watch, videos -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -73,11 +79,15 @@
                 <data android:scheme="https" android:host="www.facebook.com" android:pathPrefix="/reel/" />
                 <data android:scheme="https" android:host="www.facebook.com" android:pathPrefix="/share/v/" />
                 <data android:scheme="https" android:host="www.facebook.com" android:pathPrefix="/share/r/" />
+                <data android:scheme="https" android:host="www.facebook.com" android:pathPrefix="/watch" />
+                <data android:scheme="https" android:host="www.facebook.com" android:pathPattern="/.*/videos/.*" />
                 <data android:scheme="https" android:host="m.facebook.com" android:pathPrefix="/reel/" />
+                <data android:scheme="https" android:host="m.facebook.com" android:pathPrefix="/share/v/" />
+                <data android:scheme="https" android:host="m.facebook.com" android:pathPrefix="/share/r/" />
                 <data android:scheme="https" android:host="fb.watch" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- Twitter/X Videos -->
+            <!-- Twitter / X: status tweets -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -89,16 +99,17 @@
                 <data android:scheme="https" android:host="www.x.com" android:pathPattern="/.*/status/.*" />
             </intent-filter>
 
-            <!-- Snapchat Spotlight -->
+            <!-- Snapchat: Spotlight + share links -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.snapchat.com" android:pathPrefix="/spotlight/" />
                 <data android:scheme="https" android:host="snapchat.com" android:pathPrefix="/spotlight/" />
+                <data android:scheme="https" android:host="www.snapchat.com" android:pathPrefix="/p/" />
             </intent-filter>
 
-            <!-- Pinterest -->
+            <!-- Pinterest: pins -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -108,17 +119,18 @@
                 <data android:scheme="https" android:host="pin.it" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- Twitch Clips -->
+            <!-- Twitch: clips -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.twitch.tv" android:pathPattern="/.*/clip/.*" />
                 <data android:scheme="https" android:host="m.twitch.tv" android:pathPattern="/.*/clip/.*" />
+                <data android:scheme="https" android:host="twitch.tv" android:pathPattern="/.*/clip/.*" />
                 <data android:scheme="https" android:host="clips.twitch.tv" android:pathPrefix="/" />
             </intent-filter>
 
-            <!-- Dailymotion -->
+            <!-- Dailymotion: videos + short links -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
