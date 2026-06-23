@@ -157,19 +157,6 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
         }
     }
 
-    if (showDebugDialog || (state.error != null && debugOutput != null && showDebugDialog)) {
-        DebugDialog(
-            output = debugOutput ?: "No debug output available. Tap 'Load verbose output' to fetch.",
-            onDismiss = { showDebugDialog = false },
-            onCopy = {
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("yt-dlp debug", debugOutput ?: ""))
-                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-            },
-            onLoadVerbose = { viewModel.loadVerboseOutput() },
-        )
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -240,6 +227,19 @@ fun ReelPlayerScreen(viewModel: PlayerViewModel) {
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        if (showDebugDialog) {
+            DebugDialog(
+                output = debugOutput ?: "No debug output available. Tap 'Load verbose output' to fetch.",
+                onDismiss = { showDebugDialog = false },
+                onCopy = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("yt-dlp debug", debugOutput ?: ""))
+                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                },
+                onLoadVerbose = { viewModel.loadVerboseOutput() },
+            )
+        }
     }
 }
 

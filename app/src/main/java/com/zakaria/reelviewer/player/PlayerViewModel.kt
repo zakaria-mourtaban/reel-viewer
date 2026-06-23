@@ -15,11 +15,13 @@ import com.zakaria.reelviewer.data.ReelResult
 import com.zakaria.reelviewer.data.UpdateResult
 import com.zakaria.reelviewer.data.VideoCache
 import com.zakaria.reelviewer.util.LinkStatus
+import com.zakaria.reelviewer.util.PlatformInfo
 import com.zakaria.reelviewer.util.PlatformRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 enum class ScreenMode { SETUP, PLAYER, SETTINGS }
 
@@ -42,6 +44,14 @@ data class DownloadState(
 
 data class UpdateState(
     val isChecking: Boolean = false,
+    val message: String? = null,
+)
+
+enum class DiagnosticStatus { IDLE, RUNNING, PASS, FAIL }
+
+data class PlatformDiagnostic(
+    val platform: PlatformInfo,
+    val status: DiagnosticStatus = DiagnosticStatus.IDLE,
     val message: String? = null,
 )
 
@@ -74,6 +84,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _platformLinkStatuses = MutableStateFlow<Map<String, LinkStatus>>(emptyMap())
     val platformLinkStatuses: StateFlow<Map<String, LinkStatus>> = _platformLinkStatuses.asStateFlow()
+
+    private val _diagnostics = MutableStateFlow<Map<String, PlatformDiagnostic>>(emptyMap())
+    val diagnostics: StateFlow<Map<String, PlatformDiagnostic>> = _diagnostics.asStateFlow()
+
+    private val _isRunningDiagnostics = MutableStateFlow(false)
+    val isRunningDiagnostics: StateFlow<Boolean> = _isRunningDiagnostics.asStateFlow()
 
     init {
         refreshCacheSize()
@@ -243,6 +259,45 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun retry() {
         lastUrl?.let { loadReel(it) }
+    }
+
+    fun runDiagnostics() {
+        viewModelScope.launch {
+            _isRunningDiagnostics.value = true
+            _diagnostics.value = PlatformRegistry.platforms.associate {
+                it.name to PlatformDiagnostic(it, DiagnosticStatus.RUNNING)
+            }
+
+            for (platform in PlatformRegistry.platforms) {
+                val result = withTimeoutOrNull(30_000L) {
+                    repository.getStreamUrl(platform.testVideoUrl)
+                }
+
+                val diagnostic = when {
+                    result == null -> PlatformDiagnostic(
+                        platform, DiagnosticStatus.FAIL,
+                        "Timed out after 30s"
+                    )
+                    result is ReelResult.Success -> PlatformDiagnostic(
+                        platform, DiagnosticStatus.PASS,
+                        "OK — URL extracted"
+                    )
+                    result is ReelResult.Error -> {
+                        val msg = result.message
+                            .lineSequence()
+                            .firstOrNull { it.contains("ERROR", ignoreCase = true) || it.isNotBlank() }
+                            ?.replace("ERROR: ", "")
+                            ?: result.message
+                        PlatformDiagnostic(platform, DiagnosticStatus.FAIL, msg)
+                    }
+                    else -> PlatformDiagnostic(platform, DiagnosticStatus.FAIL, "Unknown error")
+                }
+
+                _diagnostics.value = _diagnostics.value + (platform.name to diagnostic)
+            }
+
+            _isRunningDiagnostics.value = false
+        }
     }
 
     fun wasOpenedFromLink(): Boolean = openedFromLink

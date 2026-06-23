@@ -63,6 +63,8 @@ fun SettingsScreen(viewModel: PlayerViewModel) {
     val ytDlpVersion by viewModel.ytDlpVersion.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
     val linkStatuses by viewModel.platformLinkStatuses.collectAsState()
+    val diagnostics by viewModel.diagnostics.collectAsState()
+    val isRunningDiagnostics by viewModel.isRunningDiagnostics.collectAsState()
 
     Box(
         modifier = Modifier
@@ -99,6 +101,15 @@ fun SettingsScreen(viewModel: PlayerViewModel) {
             SectionCache(
                 cacheSizeBytes = cacheSizeBytes,
                 onClearCache = { viewModel.clearCache() }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            SectionDiagnostics(
+                diagnostics = diagnostics,
+                isRunning = isRunningDiagnostics,
+                onRunDiagnostics = { viewModel.runDiagnostics() },
+                onRetry = { viewModel.runDiagnostics() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -359,6 +370,117 @@ private fun SectionCache(
 }
 
 @Composable
+private fun SectionDiagnostics(
+    diagnostics: Map<String, PlatformDiagnostic>,
+    isRunning: Boolean,
+    onRunDiagnostics: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            text = "Diagnostics",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Test video extraction from each platform. Tap a failed platform to re-run.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onRunDiagnostics,
+            enabled = !isRunning,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isRunning) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+                Text(text = "  Testing...", modifier = Modifier.padding(start = 4.dp))
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Update,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(text = "  Run Diagnostics", modifier = Modifier.padding(start = 4.dp))
+            }
+        }
+
+        if (diagnostics.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            PlatformRegistry.platforms.forEach { platform ->
+                val diag = diagnostics[platform.name] ?: return@forEach
+                DiagnosticRow(diag, onRetry)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticRow(
+    diag: PlatformDiagnostic,
+    onRetry: () -> Unit,
+) {
+    val statusColor = when (diag.status) {
+        DiagnosticStatus.PASS -> Color(0xFF4CAF50)
+        DiagnosticStatus.FAIL -> Color(0xFFFFA726)
+        DiagnosticStatus.RUNNING -> Color(0xFF2196F3)
+        DiagnosticStatus.IDLE -> Color.Gray
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { if (diag.status == DiagnosticStatus.FAIL) it.clickable { onRetry() } else it }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (diag.status == DiagnosticStatus.RUNNING) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(12.dp),
+                strokeWidth = 1.5.dp,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(statusColor, CircleShape)
+            )
+        }
+        Text(
+            text = "  ${diag.platform.name}",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = if (diag.status == DiagnosticStatus.IDLE) {
+                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+            } else {
+                MaterialTheme.colorScheme.onBackground
+            },
+            modifier = Modifier.weight(1f)
+        )
+        if (diag.message != null && diag.status != DiagnosticStatus.IDLE) {
+            Text(
+                text = diag.message,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (diag.status == DiagnosticStatus.FAIL) {
+                    Color(0xFFFFA726).copy(alpha = 0.8f)
+                } else {
+                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                },
+                maxLines = 2,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun SectionAbout() {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
@@ -376,7 +498,7 @@ private fun SectionAbout() {
                 modifier = Modifier.size(20.dp)
             )
             Text(
-                text = "  Reel Viewer v1.3.1",
+                text = "  Reel Viewer v1.4.0",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )

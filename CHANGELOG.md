@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.0
+
+- Diagnostics: test video extraction from all 9 platforms with green/yellow status
+- Each platform tested with real video URL, 30s timeout, error message shown
+- Failed platforms show yellow dot with error message; tap to re-run
+- Fix: Debug info button (ℹ) now renders above the video player instead of behind it
+- Fix: Setup screen tutorial video plays without broken "Got it" button
+- Domains in platform dropdown shown neutrally (no multi-color dots)
+
 ## v1.3.1
 
 - Fix TikTok: prefer H264 codec (-S vcodec:h264,res) to avoid HEVC formats that download without audio
